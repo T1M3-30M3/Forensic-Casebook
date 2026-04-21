@@ -11,6 +11,15 @@
 http://45.142.122.122/mdm.jpg
 ```
 *(Filtered HTTP requests containing `wget`/`curl` and `.sh`/`.exe`/`.bin` URIs)*
+## **Key tshark Commands Used:**
+```bash
+frame contains "wget" || frame contains "curl"
+http.request.uri contains ".sh" || http.request.uri contains ".exe" || http.request.uri contains ".bin"
+
+tshark -r "236-XLMRat_(1).pcap" -Y "http.request" -T fields -e http.host -e http.request.uri
+tshark -r "236-XLMRat_(1).pcap" -Y "http.request" -T fields -e http.host -e http.request.uri | awk '{print "http://"$1$2}' | sort -u
+tshark -r "236-XLMRat_(1).pcap" -Y "dns" -T fields -e dns.qry.name | sort -u
+```
 
 ## 2. Hosting Provider (IP: 45.142.122.122)
 ```
