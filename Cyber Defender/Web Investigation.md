@@ -176,6 +176,11 @@ tshark -r WebInvestigation.pcap -T fields -e http.response.code | sort | uniq -c
 
 ## 🕵️ Attacker IP
 ```bash
+http.request
+frame contains "SELECT" || frame contains "UNION"
+ip.addr == X.X.X.X
+```
+```bash
 111.224.250.131
 ```
 
@@ -191,12 +196,24 @@ search.php
 
 ## 💉 First SQLi Attempt URI
 ```bash
+ip.src == 111.224.250.131 && http.request.method == GET
+```
+```bash
 /search.php?search=book and 1=1; -- -
 ```
 
 ## 🗄️ Database Enumeration URI
 ```bash
+tshark -r WebInvestigation.pcap -Y "http.request" -T fields -e http.request.full_uri
+tshark -r WebInvestigation.pcap -Y 'http.request.uri contains "information_schema"' -T fields -e http.request.full_uri
+tshark -r WebInvestigation.pcap -Y 'http.request.uri contains "SELECT"' -T fields -e http.request.full_uri
+tshark -r WebInvestigation.pcap -Y 'http.request.uri contains "%73%65%6C%65%63%74"' -T fields -e http.request.full_uri
+tshark -r WebInvestigation.pcap -Y 'http.request && frame contains "search.php" && frame contains "INFORMATION_SCHEMA"' -T fields -e http.request.full_uri
+```
+```bash
 Filter: `http.request.uri contains "information_schema"`
+ip.dst==111.224.250.131 and ip.src==73.124.22.98 and http.response.code == 200
+ip.dst == 111.224.250.131 and http.response.code == 200
 ```
 
 ## 👥 Users Table
@@ -206,10 +223,23 @@ customers
 
 ## 🗂️ Hidden Directory
 ```bash
+tshark -r WebInvestigation.pcap -Y "http.request && frame contains \"search.php\"" -T fields -e http.request.uri
+tshark -r WebInvestigation.pcap -Y "http.request.uri matches \"/.*/\"" -T fields -e http.request.uri
+
+tshark -r WebInvestigation.pcap -Y "http.request && !(frame contains \"search.php\")" -T fields -e http.request.uri | sort | uniq -c | sort -nr
+```
+```bash
 /admin/
 ```
 
 ## 🔐 Compromised Credentials
+```bash
+tshark -r WebInvestigation.pcap -Y "http.request.method == POST" -T fields -e http.file_data | while read line; do echo $line | xxd -r -p; echo; done
+
+tshark -r WebInvestigation.pcap -Y 'http.request.method == POST && frame contains "login"' -T fields -e http.file_data | while read line; do echo $line | xxd -r -p; echo; done
+
+http.request.method == POST
+```
 ```bash
 admin:admin123!
 ```
